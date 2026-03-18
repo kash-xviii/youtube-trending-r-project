@@ -1,4 +1,4 @@
-# YouTube Trending Videos Analytics (R + Quarto)
+# YouTube Trending Videos Analytics (R)
 
 This project is an end-to-end analytics pipeline for public Kaggle YouTube Trending datasets.  
 It ingests raw CSV/ZIP files, cleans and standardizes the data, generates trend and engagement analytics, builds visualizations, and renders a final HTML report.
