@@ -1,0 +1,7 @@
+project:
+  title: "YouTube Trending Analytics"
+
+format:
+  html:
+    theme: cosmo
+    toc: true

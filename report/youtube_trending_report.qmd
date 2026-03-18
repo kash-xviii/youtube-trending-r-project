@@ -1,0 +1,168 @@
+---
+title: "YouTube Trending Videos Report"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+library(tidyverse)
+library(scales)
+
+paths <- list(
+  growth_weekly = "../outputs/tables/category_growth_weekly.csv",
+  growth_summary = "../outputs/tables/category_growth_summary.csv",
+  engagement_summary = "../outputs/tables/engagement_summary.csv",
+  outliers = "../outputs/tables/engagement_outliers.csv",
+  scatter = "../outputs/figures/engagement_scatter.png",
+  heatmap = "../outputs/figures/category_engagement_heatmap.png",
+  rank_gif = "../outputs/figures/category_rank_animation.gif"
+)
+
+missing_items <- names(paths)[!file.exists(unlist(paths))]
+if (length(missing_items) > 0) {
+  stop(
+    paste0(
+      "Missing required outputs: ",
+      paste(missing_items, collapse = ", "),
+      ". Run source('run_project.R') first."
+    )
+  )
+}
+
+growth_weekly <- readr::read_csv(paths$growth_weekly, show_col_types = FALSE)
+growth_summary <- readr::read_csv(paths$growth_summary, show_col_types = FALSE)
+engagement_summary <- readr::read_csv(paths$engagement_summary, show_col_types = FALSE)
+outliers <- readr::read_csv(paths$outliers, show_col_types = FALSE)
+
+safe_num <- function(x) ifelse(is.finite(x), x, NA_real_)
+
+growth_summary <- growth_summary %>%
+  mutate(
+    median_growth_rate = safe_num(median_growth_rate),
+    max_growth_rate = safe_num(max_growth_rate),
+    min_growth_rate = safe_num(min_growth_rate)
+  )
+
+key_top_volume <- growth_summary %>%
+  slice_max(order_by = avg_weekly_count, n = 1, with_ties = FALSE)
+
+key_fastest_growth <- growth_summary %>%
+  filter(!is.na(median_growth_rate)) %>%
+  slice_max(order_by = median_growth_rate, n = 1, with_ties = FALSE)
+
+key_highest_engagement <- engagement_summary %>%
+  slice_max(order_by = avg_engagement_rate, n = 1, with_ties = FALSE)
+
+outlier_count <- nrow(outliers)
+outlier_share <- if (sum(engagement_summary$videos, na.rm = TRUE) > 0) {
+  outlier_count / sum(engagement_summary$videos, na.rm = TRUE)
+} else {
+  NA_real_
+}
+
+render_nice_table <- function(df, caption = NULL) {
+  knitr::kable(
+    df,
+    format = "html",
+    caption = caption,
+    table.attr = "class='table table-striped table-hover table-bordered table-sm align-middle report-table'"
+  )
+}
+```
+
+<style>
+.report-table {
+  font-size: 0.93rem;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+}
+.report-table thead th {
+  background-color: #f4f7fb;
+  font-weight: 700;
+  border-bottom: 2px solid #d9e2ef;
+}
+.report-table tbody tr:hover {
+  background-color: #f8fbff;
+}
+caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 600;
+  color: #1f3b57;
+  margin-bottom: 0.4rem;
+}
+</style>
+
+## Executive Summary
+
+- Most consistently dominant category by weekly trending volume: **`r key_top_volume$category_id`**
+  with ~**`r comma(round(key_top_volume$avg_weekly_count, 0))`** videos/week.
+- Fastest median week-over-week growth category: **`r key_fastest_growth$category_id`**
+  with median growth of **`r percent(key_fastest_growth$median_growth_rate, accuracy = 0.1)`**.
+- Highest average engagement category: **`r key_highest_engagement$category_id`**
+  at **`r percent(key_highest_engagement$avg_engagement_rate, accuracy = 0.01)`** engagement.
+- Engagement outliers detected: **`r comma(outlier_count)`**
+  (`r percent(outlier_share, accuracy = 0.01)` of observations).
+
+## Visuals
+
+### 1) Animated Category Rank Chart
+
+![](../outputs/figures/category_rank_animation.gif){fig-alt="Animated weekly rank chart of top categories"}
+
+### 2) Engagement Scatter
+
+![](../outputs/figures/engagement_scatter.png){fig-alt="Scatter plot of engagement rate versus views"}
+
+### 3) Category Heatmap
+
+![](../outputs/figures/category_engagement_heatmap.png){fig-alt="Heatmap of average engagement by weekday and category"}
+
+## Category Growth
+
+```{r}
+growth_summary %>%
+  arrange(desc(avg_weekly_count)) %>%
+  mutate(
+    avg_weekly_count = round(avg_weekly_count, 2),
+    median_growth_rate = percent(median_growth_rate, accuracy = 0.1),
+    max_growth_rate = percent(max_growth_rate, accuracy = 0.1),
+    min_growth_rate = percent(min_growth_rate, accuracy = 0.1)
+  ) %>%
+  head(15) %>%
+  render_nice_table("Top 15 Categories by Average Weekly Trending Volume")
+```
+
+## Engagement Analytics
+
+```{r}
+engagement_summary %>%
+  arrange(desc(avg_engagement_rate)) %>%
+  mutate(
+    median_views = comma(round(median_views, 0)),
+    avg_engagement_rate = percent(avg_engagement_rate, accuracy = 0.01),
+    p95_engagement_rate = percent(p95_engagement_rate, accuracy = 0.01)
+  ) %>%
+  head(15) %>%
+  render_nice_table("Top 15 Categories by Average Engagement Rate")
+```
+
+## Outlier Snapshot
+
+```{r}
+outliers %>%
+  mutate(engagement_rate = percent(engagement_rate, accuracy = 0.01)) %>%
+  select(trending_date, region, category_id, title, channel_title, views, engagement_rate, z_engagement) %>%
+  head(20) %>%
+  render_nice_table("Sample of Engagement Outliers")
+```
+

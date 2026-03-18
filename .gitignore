@@ -1,0 +1,12 @@
+/.quarto/
+**/*.quarto_ipynb
+
+# Local datasets and archives
+data/raw/
+data/processed/
+data/incoming/*.zip
+
+# Generated outputs
+outputs/
+report/youtube_trending_report.html
+report/youtube_trending_report_files/
