@@ -1,65 +1,67 @@
-# YouTube Trending Videos Analytics (No API)
+# YouTube Trending Videos Analytics (R + Quarto)
 
-This project analyzes public **Kaggle YouTube Trending CSV data** and produces:
-- Category growth trends
-- Engagement-rate analytics
-- Outlier detection
-- Visuals:
-  - Animated rank chart (`gganimate`)
-  - Engagement scatter plot
-  - Category heatmap
+This project is an end-to-end analytics pipeline for public Kaggle YouTube Trending datasets.  
+It ingests raw CSV/ZIP files, cleans and standardizes the data, generates trend and engagement analytics, builds visualizations, and renders a final HTML report.
 
-## 1) Dataset
+## Project Description
 
-Download one or more Kaggle YouTube trending CSV files (for example: `USvideos.csv`, `GBvideos.csv`, `INvideos.csv`) and place them in:
+The pipeline focuses on three main analysis goals:
+- **Category trend growth** across weekly windows
+- **Engagement behavior** using views, likes, and comments
+- **Outlier detection** with IQR and Z-score methods
 
-- `data/raw/`
+The project does **not** require the YouTube API. It uses only public CSV data.
 
-The script automatically reads all files ending with `videos.csv`.
+## Data Input
 
-### Easier option (ZIP auto-import)
+Place dataset files in one of the following locations:
+- `data/raw/` for extracted CSV files like `USvideos.csv`, `INvideos.csv`, etc.
+- `data/incoming/` for Kaggle ZIP files (auto-imported during run)
 
-You can place the Kaggle ZIP file directly in:
+`run_project.R` automatically imports ZIP data from `data/incoming/` into `data/raw/` before analysis.
 
-- `data/incoming/`
+## How It Works
 
-When you run `run_project.R`, the project automatically unzips and copies CSV files into `data/raw/` before analysis.
+Running the project executes this workflow:
+1. Import Kaggle ZIP (if present)
+2. Install/load required R packages
+3. Clean and normalize source data
+4. Compute analytics and generate visuals
+5. Render Quarto HTML report
 
-## 2) Run
+## Run the Project
 
-From the project root:
+From project root (R console):
 
 ```r
 source("run_project.R")
 ```
 
-or from terminal:
+From terminal:
 
 ```bash
 Rscript run_project.R
 ```
 
-On Windows, you can also double-click:
+Windows one-click launcher:
 
 ```bat
 run_project_windows.bat
 ```
 
-After a successful run, the launcher opens `report/youtube_trending_report.html` automatically.
-
-Optional flags:
+Launcher options:
 
 ```bat
 run_project_windows.bat --no-open --no-pause
 ```
 
-To create a Desktop shortcut (one-time):
+Create Desktop shortcut (one-time):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\create_desktop_shortcut.ps1
 ```
 
-## 3) Outputs
+## Outputs
 
 ### Tables (`outputs/tables`)
 - `category_growth_weekly.csv`
@@ -73,27 +75,21 @@ powershell -ExecutionPolicy Bypass -File .\create_desktop_shortcut.ps1
 - `category_engagement_heatmap.png`
 
 ### Report (`report`)
-- `youtube_trending_report.html` (rendered from `youtube_trending_report.qmd`)
+- `youtube_trending_report.html`
 
-## 4) Notes
+## Metrics and Methods
 
-- Engagement rate is defined as:
-  - `(likes + comment_count) / views`
-- Outliers are detected using:
-  - IQR rule (1.5 × IQR)
-  - Z-score threshold (`|z| >= 3`) within category
-- The project uses only public CSV datasets and no YouTube API.
+- **Engagement rate**: `(likes + comment_count) / views`
+- **Outlier rules**:
+  - IQR threshold: `1.5 × IQR`
+  - Z-score threshold: `|z| >= 3` within each category
 
-## 5) Quarto Report
+## Dependencies
 
-The pipeline now renders a Quarto HTML report automatically at the end of `run_project.R`.
+R packages are installed automatically when missing. Core packages include:
+- `tidyverse`, `lubridate`, `janitor`, `scales`
+- `gganimate`, `gifski`, `glue`, `patchwork`
 
-If Quarto package/CLI is not available, install one of these:
-
-```r
-install.packages("quarto")
-```
-
-or install Quarto CLI from:
-
-- https://quarto.org
+For report rendering, use either:
+- R package: `quarto` (`install.packages("quarto")`)
+- or Quarto CLI: https://quarto.org
