@@ -29,38 +29,6 @@ Running the project executes this workflow:
 4. Compute analytics and generate visuals
 5. Render Quarto HTML report
 
-## Run the Project
-
-From project root (R console):
-
-```r
-source("run_project.R")
-```
-
-From terminal:
-
-```bash
-Rscript run_project.R
-```
-
-Windows one-click launcher:
-
-```bat
-run_project_windows.bat
-```
-
-Launcher options:
-
-```bat
-run_project_windows.bat --no-open --no-pause
-```
-
-Create Desktop shortcut (one-time):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\create_desktop_shortcut.ps1
-```
-
 ## Outputs
 
 ### Tables (`outputs/tables`)
